@@ -38,6 +38,8 @@ func main() {
 	}
 	log.Printf("Received: %t", r.Ok)
 
+	time.Sleep(3 * time.Second)
+
 	stream, err := c.GetLogParts(ctx, &pb.WorkerRequest{})
 	if err != nil {
 		log.Fatalf("could not get log parts: %v", err)
