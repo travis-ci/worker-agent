@@ -1,8 +1,10 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"net"
+	"os/exec"
 
 	pb "github.com/travis-ci/worker-agent/agent"
 	"golang.org/x/net/context"
@@ -23,6 +25,17 @@ func (s *server) GetJobStatus(ctx context.Context, wr *pb.WorkerRequest) (*pb.Jo
 
 func (s *server) GetLogPart(ctx context.Context,  wr *pb.WorkerRequest) (*pb.LogPart, error) {
 	return &pb.LogPart{}, nil
+}
+
+func (s *server) RunJob(ctx context.Context,  wr *pb.RunJobRequest) (*pb.RunJobResponse, error) {
+	cmd := exec.Command("bash", "build.sh")
+	out, err := cmd.CombinedOutput()
+	fmt.Println(out)
+    if err != nil {
+		log.Fatalf("cmd.Run() failed with %s\n", err)
+		return &pb.RunJobResponse{Ok: false}, err
+	}
+	return &pb.RunJobResponse{Ok: true}, nil
 }
 
 func main() {
