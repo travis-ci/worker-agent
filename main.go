@@ -30,7 +30,7 @@ func (s *server) GetLogPart(ctx context.Context,  wr *pb.WorkerRequest) (*pb.Log
 func (s *server) RunJob(ctx context.Context,  wr *pb.RunJobRequest) (*pb.RunJobResponse, error) {
 	cmd := exec.Command("bash", "build.sh")
 	out, err := cmd.CombinedOutput()
-	fmt.Println(out)
+	fmt.Println(string(out))
     if err != nil {
 		log.Fatalf("cmd.Run() failed with %s\n", err)
 		return &pb.RunJobResponse{Ok: false}, err
