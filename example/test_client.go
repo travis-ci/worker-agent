@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"log"
 	"time"
@@ -40,10 +41,39 @@ func main() {
 
 	time.Sleep(3 * time.Second)
 
-	stream, err := c.GetLogParts(ctx, &pb.WorkerRequest{})
+	stream, err := c.GetLogParts(ctx, &pb.LogPartsRequest{})
 	if err != nil {
 		log.Fatalf("could not get log parts: %v", err)
 	}
+
+	offset := int64(0)
+	for {
+		part, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("%v.GetLogParts(_) = _, %v", c, err)
+		}
+		log.Println("got log part:")
+		log.Println(part.Content)
+
+		offset = part.Number
+
+		log.Println("closing")
+		stream.CloseSend()
+		break
+	}
+
+	fmt.Println("re-connecting with offset", offset)
+
+	stream, err = c.GetLogParts(ctx, &pb.LogPartsRequest{
+		Offset: offset,
+	})
+	if err != nil {
+		log.Fatalf("could not get log parts: %v", err)
+	}
+
 	for {
 		part, err := stream.Recv()
 		if err == io.EOF {

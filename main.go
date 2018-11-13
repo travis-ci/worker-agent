@@ -30,16 +30,15 @@ func (s *server) GetJobStatus(ctx context.Context, wr *pb.WorkerRequest) (*pb.Jo
 	return &pb.JobStatus{}, nil
 }
 
-// TODO: offset parameter for re-connection
-func (s *server) GetLogParts(wr *pb.WorkerRequest, stream pb.Agent_GetLogPartsServer) error {
+func (s *server) GetLogParts(wr *pb.LogPartsRequest, stream pb.Agent_GetLogPartsServer) error {
+	s.sentOffset = int64(len(s.logOutput))
 	err := stream.Send(&pb.LogPart{
-		Content: string(s.logOutput),
+		Content: string(s.logOutput[wr.Offset:]),
 		Number:  s.sentOffset,
 	})
 	if err != nil {
 		return err
 	}
-	s.sentOffset = int64(len(s.logOutput))
 
 	for part := range s.outChan {
 		if part.Number < s.sentOffset {
@@ -82,12 +81,14 @@ func (s *server) RunJob(ctx context.Context, wr *pb.RunJobRequest) (*pb.RunJobRe
 			if err != nil {
 				log.Fatalf("failed to read from stdout: %v\n", err)
 			}
+
+			offset += n
+
 			s.logOutput = append(s.logOutput, out[:n]...)
 			s.outChan <- &pb.LogPart{
 				Content: string(out[:n]),
 				Number:  int64(offset),
 			}
-			offset += n
 		}
 		close(s.outChan)
 	}()

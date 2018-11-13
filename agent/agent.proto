@@ -3,35 +3,38 @@ syntax = "proto3";
 package agent;
 
 service Agent {
-    rpc GetLogParts (WorkerRequest) returns (stream LogPart) {}
-    rpc GetJobStatus (WorkerRequest) returns (JobStatus) {}
-    rpc RunJob (RunJobRequest) returns (RunJobResponse) {}
+  rpc GetLogParts (LogPartsRequest) returns (stream LogPart) {}
+  rpc GetJobStatus (WorkerRequest) returns (JobStatus) {}
+  rpc RunJob (RunJobRequest) returns (RunJobResponse) {}
 }
 
+message LogPartsRequest {
+  int64 offset = 1;
+}
 
 message WorkerRequest {}
 
 message RunJobRequest {
-  string job_id=1;
-  int64 log_timeout_s=2;
-  int64 hard_timeout_s=3;
-  int64 max_log_length=4;
+  string job_id = 1;
+  int64 log_timeout_s = 2;
+  int64 hard_timeout_s = 3;
+  int64 max_log_length = 4;
 }
 
 message RunJobResponse {
-  bool ok=1;
+  bool ok = 1;
 }
 
 message LogPart {
-    string name = 1;
-    uint64 job_id = 2;
-    string content = 3;
-    int64 number = 4;
-    string uuid = 5;
-    bool  final = 6;
+  string name = 1;
+  uint64 job_id = 2;
+  string content = 3;
+  int64 number = 4;
+  string uuid = 5;
+  bool final = 6;
 }
 
 message JobStatus {
-    uint64 job_id = 1;
-    string status = 2;
+  uint64 job_id = 1;
+  string status = 2;
 }
