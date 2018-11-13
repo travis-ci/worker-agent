@@ -82,9 +82,9 @@ func (s *server) RunJob(ctx context.Context, wr *pb.RunJobRequest) (*pb.RunJobRe
 			if err != nil {
 				log.Fatalf("failed to read from stdout: %v\n", err)
 			}
-			s.logOutput = append(s.logOutput, out...)
+			s.logOutput = append(s.logOutput, out[:n]...)
 			s.outChan <- &pb.LogPart{
-				Content: string(out),
+				Content: string(out[:n]),
 				Number:  int64(offset),
 			}
 			offset += n
