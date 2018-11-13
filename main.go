@@ -9,6 +9,7 @@ import (
 	"net"
 	"os/exec"
 
+	"github.com/pkg/errors"
 	pb "github.com/travis-ci/worker-agent/agent"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -18,16 +19,27 @@ const (
 	port = "127.0.0.1:50051"
 )
 
+const (
+	StateStarting = "starting"
+	StateRunning  = "running"
+	StateFinished = "finished"
+	StateErrored  = "errored"
+)
+
 // server is used to implement agent.Agent.
 type server struct {
 	// TODO: add mutex around this?
 	logOutput  []byte
 	sentOffset int64
 	outChan    chan *pb.LogPart
+
+	state string
 }
 
 func (s *server) GetJobStatus(ctx context.Context, wr *pb.WorkerRequest) (*pb.JobStatus, error) {
-	return &pb.JobStatus{}, nil
+	return &pb.JobStatus{
+		Status: s.state,
+	}, nil
 }
 
 func (s *server) GetLogParts(wr *pb.LogPartsRequest, stream pb.Agent_GetLogPartsServer) error {
@@ -56,6 +68,12 @@ func (s *server) GetLogParts(wr *pb.LogPartsRequest, stream pb.Agent_GetLogParts
 }
 
 func (s *server) RunJob(ctx context.Context, wr *pb.RunJobRequest) (*pb.RunJobResponse, error) {
+	if s.state != StateStarting {
+		return &pb.RunJobResponse{Ok: false}, errors.Errorf("could not RunJob, expected state to be %v, got %v", StateStarting, s.state)
+	}
+
+	s.state = StateRunning
+
 	cmd := exec.Command("bash", "example/build.sh")
 
 	stdout, err := cmd.StdoutPipe()
@@ -95,8 +113,11 @@ func (s *server) RunJob(ctx context.Context, wr *pb.RunJobRequest) (*pb.RunJobRe
 
 	if err != nil {
 		log.Fatalf("cmd.Run() failed with %s\n", err)
+		s.state = StateErrored
 		return &pb.RunJobResponse{Ok: false}, err
 	}
+
+	s.state = StateFinished
 	return &pb.RunJobResponse{Ok: true}, nil
 }
 
@@ -110,6 +131,7 @@ func main() {
 	s := grpc.NewServer()
 	pb.RegisterAgentServer(s, &server{
 		outChan: make(chan *pb.LogPart),
+		state:   StateStarting,
 	})
 	// Register reflection service on gRPC server.
 	reflection.Register(s)

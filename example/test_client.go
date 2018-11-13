@@ -85,4 +85,32 @@ func main() {
 		log.Println("got log part:")
 		log.Println(part.Content)
 	}
+
+	s, err := c.GetJobStatus(ctx, &pb.WorkerRequest{})
+	if err != nil {
+		log.Fatalf("could not get job status: %v", err)
+	}
+
+	fmt.Println("final job status was", s.Status)
+
+	fmt.Println("---")
+
+	fmt.Println("re-connecting without offset")
+
+	stream, err = c.GetLogParts(ctx, &pb.LogPartsRequest{})
+	if err != nil {
+		log.Fatalf("could not get log parts: %v", err)
+	}
+
+	for {
+		part, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalf("%v.GetLogParts(_) = _, %v", c, err)
+		}
+		log.Println("got log part:")
+		log.Println(part.Content)
+	}
 }
