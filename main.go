@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	port = "0.0.0.0:50051"
+	port = ":50051"
 )
 
 const (
