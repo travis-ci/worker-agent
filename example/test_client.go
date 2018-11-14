@@ -6,13 +6,13 @@ import (
 	"log"
 	"time"
 
-	pb "github.com/travis-ci/worker-agent/agent"
+	agent "github.com/travis-ci/worker-agent/agent"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc"
 )
 
 const (
-	address = "localhost:50051"
+	address = "localhost:" + agent.PORT
 )
 
 func main() {
@@ -22,13 +22,15 @@ func main() {
 		log.Fatalf("did not connect: %v", err)
 	}
 	defer conn.Close()
-	c := pb.NewAgentClient(conn)
+	c := agent.NewAgentClient(conn)
+
+	fmt.Printf("agent version: %v", agent.VERSION)
 
 	// Contact the server and print out its response.
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
 	defer cancel()
-	r, err := c.RunJob(ctx, &pb.RunJobRequest{
+	r, err := c.RunJob(ctx, &agent.RunJobRequest{
 		JobId:        "123",
 		LogTimeoutS:  10,
 		HardTimeoutS: 10,
@@ -41,7 +43,7 @@ func main() {
 
 	time.Sleep(3 * time.Second)
 
-	stream, err := c.GetLogParts(ctx, &pb.LogPartsRequest{})
+	stream, err := c.GetLogParts(ctx, &agent.LogPartsRequest{})
 	if err != nil {
 		log.Fatalf("could not get log parts: %v", err)
 	}
@@ -67,7 +69,7 @@ func main() {
 
 	fmt.Println("re-connecting with offset", offset)
 
-	stream, err = c.GetLogParts(ctx, &pb.LogPartsRequest{
+	stream, err = c.GetLogParts(ctx, &agent.LogPartsRequest{
 		Offset: offset,
 	})
 	if err != nil {
@@ -86,7 +88,7 @@ func main() {
 		log.Println(part.Content)
 	}
 
-	s, err := c.GetJobStatus(ctx, &pb.WorkerRequest{})
+	s, err := c.GetJobStatus(ctx, &agent.WorkerRequest{})
 	if err != nil {
 		log.Fatalf("could not get job status: %v", err)
 	}
@@ -97,7 +99,7 @@ func main() {
 
 	fmt.Println("re-connecting without offset")
 
-	stream, err = c.GetLogParts(ctx, &pb.LogPartsRequest{})
+	stream, err = c.GetLogParts(ctx, &agent.LogPartsRequest{})
 	if err != nil {
 		log.Fatalf("could not get log parts: %v", err)
 	}
