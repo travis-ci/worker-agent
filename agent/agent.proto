@@ -19,6 +19,8 @@ message RunJobRequest {
   int64 log_timeout_s = 2;
   int64 hard_timeout_s = 3;
   int64 max_log_length = 4;
+  string command = 5;
+  repeated string command_args = 6;
 }
 
 message RunJobResponse {

@@ -35,7 +35,7 @@ type server struct {
 	outChan    chan *pb.LogPart
 
 	state    string
-	exitCode int64
+	exitCode int32
 }
 
 func (s *server) GetJobStatus(ctx context.Context, wr *pb.WorkerRequest) (*pb.JobStatus, error) {
@@ -77,7 +77,7 @@ func (s *server) RunJob(ctx context.Context, wr *pb.RunJobRequest) (*pb.RunJobRe
 
 	s.state = StateRunning
 
-	cmd := exec.Command("bash", "example/build.sh")
+	cmd := exec.Command(wr.Command, wr.CommandArgs...)
 
 	stdout, err := cmd.StdoutPipe()
 	if err != nil {
@@ -117,7 +117,7 @@ func (s *server) RunJob(ctx context.Context, wr *pb.RunJobRequest) (*pb.RunJobRe
 		if err := cmd.Wait(); err != nil {
 			if exiterr, ok := err.(*exec.ExitError); ok {
 				if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
-					s.exitCode = int64(status.ExitStatus())
+					s.exitCode = int32(status.ExitStatus())
 				}
 			} else {
 				// generic error

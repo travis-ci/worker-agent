@@ -24,7 +24,7 @@ func main() {
 	defer conn.Close()
 	c := agent.NewAgentClient(conn)
 
-	fmt.Printf("agent version: %v", agent.VERSION)
+	fmt.Printf("agent version: %v\n", agent.VERSION)
 
 	// Contact the server and print out its response.
 	ctx := context.Background()
@@ -32,6 +32,8 @@ func main() {
 	defer cancel()
 	r, err := c.RunJob(ctx, &agent.RunJobRequest{
 		JobId:        "123",
+		Command:      "bash",
+		CommandArgs:  []string{"example/build.sh"},
 		LogTimeoutS:  10,
 		HardTimeoutS: 10,
 		MaxLogLength: 10,
