@@ -91,7 +91,7 @@ func main() {
 		log.Fatalf("could not get job status: %v", err)
 	}
 
-	fmt.Println("final job status was", s.Status)
+	fmt.Println("final job status was", s.Status, s.ExitCode)
 
 	fmt.Println("---")
 

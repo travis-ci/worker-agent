@@ -8,6 +8,7 @@ import (
 	"log"
 	"net"
 	"os/exec"
+	"syscall"
 
 	"github.com/pkg/errors"
 	pb "github.com/travis-ci/worker-agent/agent"
@@ -33,12 +34,14 @@ type server struct {
 	sentOffset int64
 	outChan    chan *pb.LogPart
 
-	state string
+	state    string
+	exitCode int64
 }
 
 func (s *server) GetJobStatus(ctx context.Context, wr *pb.WorkerRequest) (*pb.JobStatus, error) {
 	return &pb.JobStatus{
-		Status: s.state,
+		Status:   s.state,
+		ExitCode: s.exitCode,
 	}, nil
 }
 
@@ -109,6 +112,18 @@ func (s *server) RunJob(ctx context.Context, wr *pb.RunJobRequest) (*pb.RunJobRe
 			}
 		}
 		close(s.outChan)
+
+		s.exitCode = 0
+		if err := cmd.Wait(); err != nil {
+			if exiterr, ok := err.(*exec.ExitError); ok {
+				if status, ok := exiterr.Sys().(syscall.WaitStatus); ok {
+					s.exitCode = int64(status.ExitStatus())
+				}
+			} else {
+				// generic error
+				s.exitCode = 1
+			}
+		}
 	}()
 
 	if err != nil {
