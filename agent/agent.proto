@@ -37,5 +37,5 @@ message LogPart {
 message JobStatus {
   uint64 job_id = 1;
   string status = 2;
-  int64 exit_code = 3;
+  int8 exit_code = 3;
 }
